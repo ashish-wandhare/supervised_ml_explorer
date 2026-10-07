@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Supervised Learning Explorer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0f1117; --bg2: #1a1d2e; --bg3: #242740; --card: #1e2235;
+    --border: #2d3154; --accent: #6c63ff; --accent2: #4fd1c5;
+    --green: #48bb78; --red: #fc8181; --yellow: #f6e05e; --orange: #f6ad55;
+    --text: #e2e8f0; --text2: #a0aec0; --text3: #718096;
+    --purple: #9f7aea; --pink: #f687b3; --blue: #63b3ed;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+  .app { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar { width: 240px; background: var(--bg2); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 0; position: fixed; height: 100vh; z-index: 100; }
+  .sidebar-logo { padding: 20px 16px; border-bottom: 1px solid var(--border); }
+  .logo-title { font-size: 16px; font-weight: 700; color: var(--accent); letter-spacing: 0.5px; }
+  .logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .sidebar-nav { padding: 12px 0; flex: 1; }
+  .nav-section { padding: 8px 16px 4px; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; color: var(--text2); font-size: 14px; transition: all 0.15s; border-left: 3px solid transparent; }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--bg3); color: var(--accent); border-left-color: var(--accent); }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-footer { padding: 16px; border-top: 1px solid var(--border); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); display: inline-block; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  /* Main */
+  .main { margin-left: 240px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .page-title { font-size: 20px; font-weight: 600; }
+  .page-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+  .content { padding: 28px; flex: 1; }
+
+  /* Cards */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .card-title { font-size: 15px; font-weight: 600; }
+  .card-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+
+  /* Grid */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  /* Stat cards */
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .stat-value { font-size: 28px; font-weight: 700; }
+  .stat-label { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .stat-icon { font-size: 24px; margin-bottom: 8px; }
+
+  /* Buttons */
+  .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #7c73ff; }
+  .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-success { background: var(--green); color: #000; }
+  .btn-danger { background: var(--red); color: #000; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Forms */
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+  .form-input, .form-select { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; outline: none; }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+  .form-select option { background: var(--bg3); }
+
+  /* Upload zone */
+  .upload-zone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(108,99,255,0.05); }
+  .upload-icon { font-size: 40px; margin-bottom: 12px; }
+  .upload-text { font-size: 15px; color: var(--text2); }
+  .upload-hint { font-size: 12px; color: var(--text3); margin-top: 6px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--bg3); color: var(--text2); padding: 10px 14px; text-align: left; font-weight: 500; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-green { background: rgba(72,187,120,0.15); color: var(--green); }
+  .badge-red { background: rgba(252,129,129,0.15); color: var(--red); }
+  .badge-blue { background: rgba(99,179,237,0.15); color: var(--blue); }
+  .badge-purple { background: rgba(159,122,234,0.15); color: var(--purple); }
+  .badge-yellow { background: rgba(246,224,94,0.15); color: var(--yellow); }
+
+  /* Progress bar */
+  .progress-bar { background: var(--bg3); border-radius: 999px; height: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 999px; transition: width 0.6s ease; }
+
+  /* Algorithm cards */
+  .algo-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.15s; }
+  .algo-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .algo-card.selected { border-color: var(--accent); background: rgba(108,99,255,0.08); }
+  .algo-name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .algo-type { font-size: 11px; color: var(--text3); margin-bottom: 8px; }
+  .algo-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+  /* Metric display */
+  .metric-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-name { font-size: 13px; color: var(--text2); }
+  .metric-val { font-size: 14px; font-weight: 600; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--bg3); border-radius: 10px; padding: 4px; margin-bottom: 20px; }
+  .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; color: var(--text2); transition: all 0.15s; border: none; background: none; }
+  .tab.active { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,0.3); }
+
+  /* Loader */
+  .loader { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loader-overlay { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 40px; }
+  .loader-text { font-size: 14px; color: var(--text2); }
+
+  /* Toast */
+  .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 999; display: flex; flex-direction: column; gap: 8px; }
+  .toast { padding: 12px 16px; border-radius: 10px; font-size: 13px; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.4); animation: slideIn 0.2s ease; max-width: 320px; }
+  .toast-success { background: var(--bg2); border: 1px solid var(--green); color: var(--text); }
+  .toast-error { background: var(--bg2); border: 1px solid var(--red); color: var(--text); }
+  .toast-info { background: var(--bg2); border: 1px solid var(--accent); color: var(--text); }
+  @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* Confusion matrix */
+  .cm-cell { display: inline-flex; align-items: center; justify-content: center; min-width: 50px; min-height: 50px; border-radius: 6px; font-weight: 600; font-size: 14px; }
+
+  /* Feature importance bar */
+  .feat-row { margin-bottom: 10px; }
+  .feat-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 15px; color: var(--text2); margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+
+  /* Chart container */
+  .chart-box { position: relative; height: 260px; }
+
+  /* Comparison table highlight */
+  .best-cell { color: var(--green); font-weight: 700; }
+
+  .algo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .section-gap { margin-top: 24px; }
+  .flex-row { display: flex; align-items: center; gap: 12px; }
+  .spacer { flex: 1; }
+  .text-sm { font-size: 13px; }
+  .text-xs { font-size: 12px; color: var(--text3); }
+  .mt-2 { margin-top: 8px; }
+  .mt-4 { margin-top: 16px; }
+  .mb-2 { margin-bottom: 8px; }
+  .chip { background: var(--bg3); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font-size: 11px; color: var(--text2); display: inline-block; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+const API = 'http://localhost:8000/api';
+
+// ─── Utilities ─────────────────────────────────────────────────────────────
+async function api(endpoint, options = {}) {
+  const res = await fetch(API + endpoint, options);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Request failed');
+  }
+  return res.json();
+}
+
+function fmt(v, decimals = 3) {
+  if (v === null || v === undefined) return '—';
+  return typeof v === 'number' ? v.toFixed(decimals) : v;
+}
+
+function pct(v) {
+  if (v === null || v === undefined) return '—';
+  return (v * 100).toFixed(1) + '%';
+}
+
+function metricColor(v) {
+  if (v >= 0.9) return '#48bb78';
+  if (v >= 0.75) return '#f6ad55';
+  return '#fc8181';
+}
+
+// ─── Toast ──────────────────────────────────────────────────────────────────
+function useToast() {
+  const [toasts, setToasts] = useState([]);
+  const show = useCallback((msg, type = 'info') => {
+    const id = Date.now();
+    setToasts(t => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
+  }, []);
+  return { toasts, show };
+}
+
+function ToastContainer({ toasts }) {
+  return (
+    <div className="toast-container">
+      {toasts.map(t => (
+        <div key={t.id} className={`toast toast-${t.type}`}>
+          <span>{t.type === 'success' ? '✅' : t.type === 'error' ? '❌' : 'ℹ️'}</span>
+          {t.msg}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Sidebar ────────────────────────────────────────────────────────────────
+const NAV = [
+  { key: 'home', icon: '🏠', label: 'Overview' },
+  { key: 'datasets', icon: '📂', label: 'Datasets' },
+  { key: 'train', icon: '🧠', label: 'Train Model' },
+  { key: 'results', icon: '📊', label: 'Results' },
+  { key: 'compare', icon: '⚖️', label: 'Compare' },
+  { key: 'leaderboard', icon: '🏆', label: 'Leaderboard' },
+  { key: 'guide', icon: '📖', label: 'Algorithm Guide' },
+];
+
+function Sidebar({ page, onNav }) {
+  return (
+    <div className="sidebar">
+      <div className="sidebar-logo">
+        <div className="logo-title">ML Explorer</div>
+        <div className="logo-sub">Supervised Learning Platform</div>
+      </div>
+      <nav className="sidebar-nav">
+        <div className="nav-section">Menu</div>
+        {NAV.map(n => (
+          <div key={n.key} className={`nav-item ${page === n.key ? 'active' : ''}`} onClick={() => onNav(n.key)}>
+            <span className="nav-icon">{n.icon}</span>
+            {n.label}
+          </div>
+        ))}
+      </nav>
+      <div className="sidebar-footer">
+        <div className="text-xs"><span className="status-dot"></span>Backend connected</div>
+        <div className="text-xs mt-2" style={{color:'var(--text3)'}}>FastAPI + SQLite</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Overview page ───────────────────────────────────────────────────────────
+function Overview({ onNav }) {
+  const [summary, setSummary] = useState(null);
+  useEffect(() => {
+    api('/analysis/summary').then(setSummary).catch(() => {});
+  }, []);
+
+  const concepts = [
+    { name: 'Linear Regression', type: 'Regression', icon: '📈', color: '#63b3ed', desc: 'Predicts continuous values by fitting a line through data points using least squares.' },
+    { name: 'Logistic Regression', type: 'Classification', icon: '🔢', color: '#9f7aea', desc: 'Estimates class probability using the sigmoid function for binary/multiclass tasks.' },
+    { name: 'Decision Tree', type: 'Both', icon: '🌳', color: '#48bb78', desc: 'Recursively partitions feature space using if-else rules to reach predictions.' },
+    { name: 'Random Forest', type: 'Both', icon: '🌲', color: '#4fd1c5', desc: 'Ensemble of decorrelated trees. Reduces variance through bootstrap aggregation.' },
+    { name: 'SVM / SVR', type: 'Both', icon: '🎯', color: '#f687b3', desc: 'Finds the maximum-margin hyperplane. Uses kernel trick for non-linear boundaries.' },
+    { name: 'KNN', type: 'Both', icon: '🔍', color: '#f6ad55', desc: 'Lazy learner — classifies/regresses based on k nearest training samples.' },
+    { name: 'Naive Bayes', type: 'Classification', icon: '📊', color: '#fc8181', desc: 'Applies Bayes theorem assuming feature independence. Fast and probabilistic.' },
+    { name: 'Gradient Boosting', type: 'Both', icon: '🚀', color: '#6c63ff', desc: 'Builds trees sequentially, each correcting residuals of the previous.' },
+  ];
+
+  return (
+    <div>
+      {/* Stats */}
+      <div className="grid-4 mb-2">
+        {[
+          { label: 'Total Experiments', value: summary?.total_experiments ?? '—', icon: '🧪', color: '#6c63ff' },
+          { label: 'Successful Runs', value: summary?.successful ?? '—', icon: '✅', color: '#48bb78' },
+          { label: 'Algorithms Available', value: '15+', icon: '🤖', color: '#4fd1c5' },
+          { label: 'Unique Algorithms Used', value: summary?.unique_algorithms ?? '—', icon: '🏆', color: '#f6ad55' },
+        ].map(s => (
+          <div key={s.label} className="stat-card">
+            <div className="stat-icon">{s.icon}</div>
+            <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
+            <div className="stat-label">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Algorithm Cards */}
+      <div className="card section-gap">
+        <div className="card-header">
+          <div>
+            <div className="card-title">Supervised Learning Algorithms</div>
+            <div className="card-sub">All algorithms available for training and comparison</div>
+          </div>
+          <button className="btn btn-primary" onClick={() => onNav('train')}>Start Training →</button>
+        </div>
+        <div className="algo-grid">
+          {concepts.map(c => (
+            <div key={c.name} className="algo-card">
+              <div className="flex-row mb-2">
+                <span style={{ fontSize: 22 }}>{c.icon}</span>
+                <span className="badge" style={{ background: c.color + '22', color: c.color, fontSize: 10 }}>{c.type}</span>
+              </div>
+              <div className="algo-name">{c.name}</div>
+              <div className="algo-desc">{c.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Quick start */}
+      <div className="card section-gap">
+        <div className="card-title mb-2">Quick Start Guide</div>
+        <div className="grid-3">
+          {[
+            { step: '1', title: 'Upload Dataset', desc: 'Go to Datasets → Upload your CSV file. Select target column and task type.', page: 'datasets' },
+            { step: '2', title: 'Train Models', desc: 'Go to Train Model → Choose an algorithm or run all at once for comparison.', page: 'train' },
+            { step: '3', title: 'Compare & Analyse', desc: 'Go to Compare to see side-by-side metrics, feature importance, and leaderboard.', page: 'compare' },
+          ].map(s => (
+            <div key={s.step} className="card" style={{ cursor: 'pointer' }} onClick={() => onNav(s.page)}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent)', marginBottom: 8 }}>{s.step}</div>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>{s.title}</div>
+              <div className="text-xs">{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Datasets page ──────────────────────────────────────────────────────────
+function Datasets({ toast }) {
+  const [datasets, setDatasets] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [file, setFile] = useState(null);
+  const [targetCol, setTargetCol] = useState('');
+  const [drag, setDrag] = useState(false);
+  const [preview, setPreview] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [detectedType, setDetectedType] = useState(null);
+  const fileRef = useRef();
+
+  const load = () => api('/datasets/').then(setDatasets).catch(() => {});
+  useEffect(() => { load(); }, []);
+
+  const detectTaskType = (rows, col) => {
+    const vals = rows.map(r => r[col]).filter(v => v !== '' && v !== null && v !== undefined);
+    const allNumeric = vals.every(v => !isNaN(v));
+    if (!allNumeric) return 'classification';
+    const unique = [...new Set(vals.map(Number))];
+    if (unique.every(v => v === 0 || v === 1)) return 'classification';
+    if (unique.length <= 10 && vals.every(v => Number.isInteger(Number(v)))) return 'classification';
+    return 'regression';
+  };
+
+  const handleFile = f => {
+    setFile(f); setPreview(null); setDetectedType(null);
+    const reader = new FileReader();
+    reader.onload = e => {
+      const lines = e.target.result.split('\n').filter(l => l.trim());
+      if (lines[0]) {
+        const cols = lines[0].split(',').map(c => c.trim().replace(/"/g, ''));
+        const rows = lines.slice(1, 20).map(line => {
+          const vals = line.split(',');
+          return Object.fromEntries(cols.map((c, i) => [c, vals[i]?.trim()]));
+        });
+        const lastCol = cols[cols.length - 1];
+        setPreview({ cols, lines: lines.length - 1, rows });
+        setTargetCol(lastCol);
+        setDetectedType(detectTaskType(rows, lastCol));
+      }
+    };
+    reader.readAsText(f);
+  };
+
+  const handleTargetChange = col => {
+    setTargetCol(col);
+    if (preview?.rows) setDetectedType(detectTaskType(preview.rows, col));
+  };
+
+  const upload = async () => {
+    if (!file || !targetCol) return toast('Please select a file and target column', 'error');
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('target_column', targetCol);
+      fd.append('task_type', 'auto');
+      const res = await api('/datasets/upload', { method: 'POST', body: fd });
+      toast('Uploaded! Auto-detected: ' + res.task_type, 'success');
+      setFile(null); setPreview(null); setTargetCol(''); setDetectedType(null);
+      load();
+    } catch (e) { toast(e.message, 'error'); }
+    setUploading(false);
+  };
+
+  const del = async id => {
+    if (!confirm('Delete this dataset?')) return;
+    await api(`/datasets/${id}`, { method: 'DELETE' });
+    toast('Dataset deleted', 'info');
+    if (selected?.id === id) setSelected(null);
+    load();
+  };
+
+  const viewDetails = async d => {
+    const details = await api(`/datasets/${d.id}`);
+    setSelected(details);
+  };
+
+  return (
+    <div>
+      <div className="grid-2">
+        {/* Upload */}
+        <div className="card">
+          <div className="card-title mb-2">Upload Dataset</div>
+          <div
+            className={`upload-zone ${drag ? 'drag' : ''}`}
+            onDragOver={e => { e.preventDefault(); setDrag(true); }}
+            onDragLeave={() => setDrag(false)}
+            onDrop={e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+            onClick={() => fileRef.current.click()}
+          >
+            <div className="upload-icon">📁</div>
+            <div className="upload-text">{file ? file.name : 'Drop CSV here or click to browse'}</div>
+            <div className="upload-hint">{preview ? `${preview.lines} rows • ${preview.cols.length} columns detected` : 'Only .csv files supported'}</div>
+          </div>
+          <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={e => handleFile(e.target.files[0])} />
+
+          {preview && (
+            <div className="section-gap">
+              <div className="form-group">
+                <label className="form-label">Target Column</label>
+                <select className="form-select" value={targetCol} onChange={e => handleTargetChange(e.target.value)}>
+                  {preview.cols.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+              {detectedType && (
+                <div style={{ background: 'var(--bg3)', border: '1px solid ' + (detectedType === 'classification' ? '#9f7aea' : '#63b3ed'), borderRadius: 10, padding: '12px 16px', marginBottom: 14 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 4 }}>Auto-detected task type</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>{detectedType === 'classification' ? '🏷️' : '📈'}</span>
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: 15, color: detectedType === 'classification' ? '#9f7aea' : '#63b3ed', textTransform: 'capitalize' }}>{detectedType}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+                        {detectedType === 'classification'
+                          ? 'Target has labels/categories → classification algorithms'
+                          : 'Target has continuous numbers → regression algorithms'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <button className="btn btn-primary" style={{ width: '100%' }} onClick={upload} disabled={uploading}>
+                {uploading ? '⏳ Uploading...' : '⬆️ Upload Dataset'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Dataset details */}
+        {selected ? (
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <div className="card-title">{selected.name}</div>
+                <div className="card-sub">{selected.rows} rows × {selected.columns} columns</div>
+              </div>
+              <button className="btn btn-sm btn-secondary" onClick={() => setSelected(null)}>✕ Close</button>
+            </div>
+            <div className="flex-row mb-2">
+              <span className={`badge badge-${selected.task_type === 'classification' ? 'purple' : 'blue'}`}>{selected.task_type}</span>
+              <span className="chip">Target: {selected.target_column}</span>
+            </div>
+            <div className="card-title text-sm mt-4 mb-2">Data Preview</div>
+            <div className="table-wrap" style={{ maxHeight: 200, overflowY: 'auto' }}>
+              <table>
+                <thead><tr>{selected.column_names?.map(c => <th key={c}>{c}</th>)}</tr></thead>
+                <tbody>
+                  {selected.preview?.map((row, i) => (
+                    <tr key={i}>{selected.column_names?.map(c => <td key={c}>{row[c] ?? '—'}</td>)}</tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="card">
+            <div className="card-title mb-2">Dataset List</div>
+            {datasets.length === 0 ? (
+              <div className="empty-state"><div className="empty-icon">📂</div><div className="empty-text">No datasets yet</div><div className="empty-sub">Upload a CSV to get started</div></div>
+            ) : (
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th>Name</th><th>Rows</th><th>Type</th><th>Target</th><th></th></tr></thead>
+                  <tbody>
+                    {datasets.map(d => (
+                      <tr key={d.id}>
+                        <td><strong>{d.name}</strong></td>
+                        <td>{d.rows}</td>
+                        <td><span className={`badge badge-${d.task_type === 'classification' ? 'purple' : 'blue'}`}>{d.task_type}</span></td>
+                        <td><code style={{ fontSize: 11 }}>{d.target_column}</code></td>
+                        <td>
+                          <div className="flex-row">
+                            <button className="btn btn-sm btn-secondary" onClick={() => viewDetails(d)}>View</button>
+                            <button className="btn btn-sm btn-danger" onClick={() => del(d.id)}>Del</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Train page ──────────────────────────────────────────────────────────────
+function Train({ toast }) {
+  const [datasets, setDatasets] = useState([]);
+  const [datasetId, setDatasetId] = useState('');
+  const [algorithms, setAlgorithms] = useState({});
+  const [selectedAlgo, setSelectedAlgo] = useState('');
+  const [testSize, setTestSize] = useState(0.2);
+  const [training, setTraining] = useState(false);
+  const [result, setResult] = useState(null);
+  const [runAll, setRunAll] = useState(false);
+  const chartRef = useRef();
+  const chartInstance = useRef();
+
+  useEffect(() => { api('/datasets/').then(setDatasets).catch(() => {}); }, []);
+
+  useEffect(() => {
+    if (!datasetId) return;
+    const ds = datasets.find(d => d.id == datasetId);
+    if (!ds) return;
+    api(`/train/algorithms?task_type=${ds.task_type}`).then(setAlgorithms).catch(() => {});
+    setSelectedAlgo('');
+  }, [datasetId]);
+
+  const train = async () => {
+    if (!datasetId) return toast('Select a dataset', 'error');
+    setTraining(true); setResult(null);
+    try {
+      let res;
+      if (runAll) {
+        res = await api(`/train/run-all?dataset_id=${datasetId}&test_size=${testSize}`, { method: 'POST' });
+        toast(`Trained ${res.total} algorithms!`, 'success');
+        setResult({ type: 'all', data: res });
+      } else {
+        if (!selectedAlgo) { toast('Select an algorithm', 'error'); setTraining(false); return; }
+        res = await api('/train/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dataset_id: parseInt(datasetId), algorithm: selectedAlgo, test_size: testSize }),
+        });
+        toast(`${selectedAlgo} trained successfully!`, 'success');
+        setResult({ type: 'single', data: res });
+      }
+    } catch (e) { toast(e.message, 'error'); }
+    setTraining(false);
+  };
+
+  useEffect(() => {
+    if (!result || !chartRef.current) return;
+    if (chartInstance.current) chartInstance.current.destroy();
+    const ctx = chartRef.current.getContext('2d');
+
+    if (result.type === 'all') {
+      const rows = result.data.results.filter(r => r.status === 'success');
+      const primary = rows[0]?.metrics ? Object.keys(rows[0].metrics)[0] : 'accuracy';
+      chartInstance.current = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: rows.map(r => r.algorithm),
+          datasets: [{
+            label: primary,
+            data: rows.map(r => r.metrics?.[primary] ?? 0),
+            backgroundColor: rows.map((_, i) => `hsl(${200 + i * 25}, 70%, 60%)`),
+            borderRadius: 6,
+          }],
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, max: 1, grid: { color: '#2d3154' }, ticks: { color: '#a0aec0' } },
+            x: { grid: { display: false }, ticks: { color: '#a0aec0', maxRotation: 30 } },
+          },
+        },
+      });
+    } else if (result.type === 'single' && result.data.feature_importance) {
+      const fi = result.data.feature_importance;
+      const entries = Object.entries(fi).slice(0, 8);
+      chartInstance.current = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: entries.map(([k]) => k),
+          datasets: [{ label: 'Importance', data: entries.map(([, v]) => v), backgroundColor: '#6c63ff', borderRadius: 4 }],
+        },
+        options: {
+          indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: '#2d3154' }, ticks: { color: '#a0aec0' } },
+            y: { grid: { display: false }, ticks: { color: '#a0aec0' } },
+          },
+        },
+      });
+    }
+  }, [result]);
+
+  const selectedDS = datasets.find(d => d.id == datasetId);
+
+  return (
+    <div className="grid-2">
+      {/* Config panel */}
+      <div>
+        <div className="card">
+          <div className="card-title mb-2">Training Configuration</div>
+          <div className="form-group">
+            <label className="form-label">Dataset</label>
+            <select className="form-select" value={datasetId} onChange={e => setDatasetId(e.target.value)}>
+              <option value="">— Select dataset —</option>
+              {datasets.map(d => <option key={d.id} value={d.id}>{d.name} ({d.task_type})</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Test Split: {Math.round(testSize * 100)}%</label>
+            <input type="range" min="0.1" max="0.4" step="0.05" value={testSize} onChange={e => setTestSize(parseFloat(e.target.value))} style={{ width: '100%', accentColor: 'var(--accent)' }} />
+          </div>
+          <div className="form-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+              <input type="checkbox" checked={runAll} onChange={e => setRunAll(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
+              Train all algorithms at once
+            </label>
+          </div>
+          <button className="btn btn-primary" style={{ width: '100%', padding: '12px' }} onClick={train} disabled={training || !datasetId}>
+            {training ? <span><div className="loader" style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 8 }}></div>Training...</span> : runAll ? '🚀 Train All Algorithms' : '🧠 Train Selected Algorithm'}
+          </button>
+        </div>
+
+        {/* Algorithm selection */}
+        {!runAll && datasetId && (
+          <div className="card section-gap">
+            <div className="card-title mb-2">Select Algorithm</div>
+            {Object.entries(algorithms).map(([name, info]) => (
+              <div key={name} className={`algo-card mb-2 ${selectedAlgo === name ? 'selected' : ''}`} onClick={() => setSelectedAlgo(name)}>
+                <div className="algo-name">{name}</div>
+                <div className="algo-desc">{info.description}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Results */}
+      <div>
+        {training && (
+          <div className="card loader-overlay">
+            <div className="loader" style={{ width: 40, height: 40, borderWidth: 3 }}></div>
+            <div className="loader-text">Training {runAll ? 'all algorithms' : selectedAlgo}...</div>
+          </div>
+        )}
+
+        {result && !training && (
+          <div>
+            {result.type === 'single' && (
+              <div className="card">
+                <div className="card-header">
+                  <div>
+                    <div className="card-title">{result.data.algorithm}</div>
+                    <div className="card-sub">{result.data.dataset} • {Math.round(result.data.training_time_ms)}ms</div>
+                  </div>
+                  <span className="badge badge-green">✓ Success</span>
+                </div>
+                {Object.entries(result.data.metrics || {}).map(([k, v]) => (
+                  <div key={k} className="metric-row">
+                    <span className="metric-name">{k.replace(/_/g, ' ').toUpperCase()}</span>
+                    <div className="flex-row">
+                      <div className="progress-bar" style={{ width: 100 }}>
+                        <div className="progress-fill" style={{ width: `${Math.min(v * 100, 100)}%`, background: metricColor(v) }}></div>
+                      </div>
+                      <span className="metric-val" style={{ color: metricColor(v) }}>{pct(v)}</span>
+                    </div>
+                  </div>
+                ))}
+
+                {result.data.confusion_matrix && (
+                  <div className="mt-4">
+                    <div className="card-title text-sm mb-2">Confusion Matrix</div>
+                    {result.data.confusion_matrix.map((row, i) => (
+                      <div key={i} className="flex-row mb-2">
+                        {row.map((v, j) => (
+                          <div key={j} className="cm-cell" style={{ background: i === j ? 'rgba(72,187,120,0.2)' : 'rgba(252,129,129,0.1)', color: i === j ? '#48bb78' : '#fc8181', margin: 2 }}>{v}</div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {result.data.feature_importance && (
+                  <div className="mt-4">
+                    <div className="card-title text-sm mb-2">Feature Importance</div>
+                    <div className="chart-box" style={{ height: 200 }}>
+                      <canvas ref={chartRef}></canvas>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {result.type === 'all' && (
+              <div className="card">
+                <div className="card-title mb-2">All Algorithms Result</div>
+                <div className="chart-box mb-2">
+                  <canvas ref={chartRef}></canvas>
+                </div>
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Algorithm</th>
+                        {result.data.results[0]?.metrics && Object.keys(result.data.results[0].metrics).map(k => <th key={k}>{k}</th>)}
+                        <th>Time (ms)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.data.results.map(r => (
+                        <tr key={r.algorithm}>
+                          <td><strong>{r.algorithm}</strong></td>
+                          {r.metrics ? Object.values(r.metrics).map((v, i) => <td key={i} style={{ color: metricColor(v) }}>{pct(v)}</td>) : <td colSpan={4}><span className="badge badge-red">Failed</span></td>}
+                          <td>{Math.round(r.training_time_ms || 0)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!result && !training && (
+          <div className="card">
+            <div className="empty-state">
+              <div className="empty-icon">🧠</div>
+              <div className="empty-text">Ready to train</div>
+              <div className="empty-sub">Select a dataset and algorithm, then click Train</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Results page ────────────────────────────────────────────────────────────
+function Results({ toast }) {
+  const [results, setResults] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const chartRef = useRef();
+  const chartInstance = useRef();
+
+  const load = () => api('/results/').then(setResults).catch(() => {});
+  useEffect(() => { load(); }, []);
+
+  const del = async id => {
+    if (!confirm('Delete?')) return;
+    await api(`/results/${id}`, { method: 'DELETE' });
+    toast('Deleted', 'info');
+    if (selected?.id === id) setSelected(null);
+    load();
+  };
+
+  const view = async r => {
+    const detail = await api(`/results/${r.id}`);
+    setSelected(detail);
+  };
+
+  useEffect(() => {
+    if (!selected?.feature_importance || !chartRef.current) return;
+    if (chartInstance.current) chartInstance.current.destroy();
+    const entries = Object.entries(selected.feature_importance).slice(0, 10);
+    const ctx = chartRef.current.getContext('2d');
+    chartInstance.current = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: entries.map(([k]) => k),
+        datasets: [{ label: 'Importance', data: entries.map(([, v]) => v), backgroundColor: '#6c63ff', borderRadius: 4 }],
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: '#2d3154' }, ticks: { color: '#a0aec0' } }, y: { grid: { display: false }, ticks: { color: '#a0aec0', font: { size: 11 } } } },
+      },
+    });
+  }, [selected]);
+
+  return (
+    <div className="grid-2">
+      <div className="card">
+        <div className="card-title mb-2">Experiment History</div>
+        {results.length === 0 ? (
+          <div className="empty-state"><div className="empty-icon">📊</div><div className="empty-text">No experiments yet</div></div>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Algorithm</th><th>Dataset</th><th>Primary Metric</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {results.map(r => {
+                  const primaryMetric = r.metrics ? Object.entries(r.metrics)[0] : null;
+                  return (
+                    <tr key={r.id} style={{ cursor: 'pointer' }} onClick={() => view(r)}>
+                      <td><strong>{r.algorithm}</strong></td>
+                      <td><span className="text-xs">{r.dataset}</span></td>
+                      <td>{primaryMetric ? <span style={{ color: metricColor(primaryMetric[1]) }}>{pct(primaryMetric[1])}</span> : '—'}</td>
+                      <td><span className={`badge badge-${r.status === 'success' ? 'green' : 'red'}`}>{r.status}</span></td>
+                      <td><button className="btn btn-sm btn-danger" onClick={e => { e.stopPropagation(); del(r.id); }}>Del</button></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div>
+        {selected ? (
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <div className="card-title">{selected.algorithm}</div>
+                <div className="card-sub">{selected.dataset} • {Math.round(selected.training_time_ms || 0)}ms</div>
+              </div>
+              <button className="btn btn-sm btn-secondary" onClick={() => setSelected(null)}>✕</button>
+            </div>
+            <div className="flex-row mb-2">
+              <span className={`badge badge-${selected.task_type === 'classification' ? 'purple' : 'blue'}`}>{selected.task_type}</span>
+              <span className="chip">Target: {selected.target_column}</span>
+            </div>
+            {Object.entries(selected.metrics || {}).map(([k, v]) => (
+              <div key={k} className="metric-row">
+                <span className="metric-name">{k.replace(/_/g, ' ').toUpperCase()}</span>
+                <span className="metric-val" style={{ color: metricColor(v) }}>{pct(v)}</span>
+              </div>
+            ))}
+            {selected.feature_importance && (
+              <div className="mt-4">
+                <div className="card-title text-sm mb-2">Feature Importance</div>
+                <div className="chart-box" style={{ height: 220 }}><canvas ref={chartRef}></canvas></div>
+              </div>
+            )}
+            {selected.confusion_matrix && (
+              <div className="mt-4">
+                <div className="card-title text-sm mb-2">Confusion Matrix</div>
+                {selected.confusion_matrix.map((row, i) => (
+                  <div key={i} className="flex-row">{row.map((v, j) => (
+                    <div key={j} className="cm-cell" style={{ background: i===j?'rgba(72,187,120,0.2)':'rgba(252,129,129,0.1)', color: i===j?'#48bb78':'#fc8181', margin:2 }}>{v}</div>
+                  ))}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="card">
+            <div className="empty-state"><div className="empty-icon">👆</div><div className="empty-text">Click a row to view details</div></div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Compare page ────────────────────────────────────────────────────────────
+function Compare({ toast }) {
+  const [datasets, setDatasets] = useState([]);
+  const [datasetId, setDatasetId] = useState('');
+  const [comparison, setComparison] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const chartRef = useRef();
+  const chartInstance = useRef();
+
+  useEffect(() => { api('/datasets/').then(setDatasets).catch(() => {}); }, []);
+
+  const compare = async () => {
+    if (!datasetId) return toast('Select a dataset', 'error');
+    setLoading(true);
+    try {
+      const data = await api(`/analysis/compare?dataset_id=${datasetId}`);
+      setComparison(data);
+    } catch (e) { toast(e.message, 'error'); }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!comparison || !chartRef.current) return;
+    if (chartInstance.current) chartInstance.current.destroy();
+    const ctx = chartRef.current.getContext('2d');
+    const rows = comparison.comparison;
+    const allMetricKeys = rows.length > 0 && rows[0].metrics ? Object.keys(rows[0].metrics) : [];
+    const colors = ['#6c63ff', '#48bb78', '#f6ad55', '#fc8181', '#4fd1c5', '#f687b3', '#9f7aea', '#63b3ed'];
+
+    chartInstance.current = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: rows.map(r => r.algorithm),
+        datasets: allMetricKeys.map((key, i) => ({
+          label: key,
+          data: rows.map(r => r.metrics?.[key] ?? 0),
+          backgroundColor: colors[i % colors.length],
+          borderRadius: 4,
+        })),
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#a0aec0', font: { size: 11 } } } },
+        scales: {
+          y: { beginAtZero: true, max: 1, grid: { color: '#2d3154' }, ticks: { color: '#a0aec0' } },
+          x: { grid: { display: false }, ticks: { color: '#a0aec0', maxRotation: 30, font: { size: 11 } } },
+        },
+      },
+    });
+  }, [comparison]);
+
+  const allKeys = comparison?.comparison?.[0]?.metrics ? Object.keys(comparison.comparison[0].metrics) : [];
+  const getBest = key => {
+    if (!comparison) return null;
+    return comparison.comparison.reduce((best, cur) => {
+      const v = cur.metrics?.[key] ?? -Infinity;
+      return v > (best.metrics?.[key] ?? -Infinity) ? cur : best;
+    }, {});
+  };
+
+  return (
+    <div>
+      <div className="card">
+        <div className="flex-row mb-2">
+          <select className="form-select" style={{ maxWidth: 280 }} value={datasetId} onChange={e => setDatasetId(e.target.value)}>
+            <option value="">— Select dataset to compare —</option>
+            {datasets.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+          <button className="btn btn-primary" onClick={compare} disabled={loading || !datasetId}>
+            {loading ? '⏳ Comparing...' : '⚖️ Compare All Experiments'}
+          </button>
+        </div>
+
+        {comparison && (
+          <div>
+            <div className="flex-row mb-2">
+              <span className="badge badge-green">🏆 Best: {comparison.best_algorithm}</span>
+              <span className="chip">{comparison.total_algorithms} algorithms compared</span>
+              <span className={`badge badge-${comparison.task_type === 'classification' ? 'purple' : 'blue'}`}>{comparison.task_type}</span>
+            </div>
+            <div className="chart-box" style={{ height: 300 }}><canvas ref={chartRef}></canvas></div>
+            <div className="section-gap table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Algorithm</th>
+                    {allKeys.map(k => <th key={k}>{k.replace(/_/g, ' ').toUpperCase()}</th>)}
+                    <th>Time (ms)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparison.comparison.map(r => (
+                    <tr key={r.algorithm} style={{ background: r.algorithm === comparison.best_algorithm ? 'rgba(108,99,255,0.08)' : '' }}>
+                      <td>
+                        <strong>{r.algorithm}</strong>
+                        {r.algorithm === comparison.best_algorithm && <span className="badge badge-purple" style={{ marginLeft: 6, fontSize: 10 }}>Best</span>}
+                      </td>
+                      {allKeys.map(k => {
+                        const best = getBest(k);
+                        const v = r.metrics?.[k];
+                        const isBest = best?.algorithm === r.algorithm;
+                        return <td key={k} className={isBest ? 'best-cell' : ''} style={{ color: v !== undefined ? metricColor(v) : 'inherit' }}>{v !== undefined ? pct(v) : '—'}</td>;
+                      })}
+                      <td>{Math.round(r.training_time_ms || 0)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {!comparison && !loading && (
+          <div className="empty-state"><div className="empty-icon">⚖️</div><div className="empty-text">Select a dataset and click Compare</div><div className="empty-sub">You need to train models first</div></div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Leaderboard ─────────────────────────────────────────────────────────────
+function Leaderboard() {
+  const [data, setData] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const chartRef = useRef();
+  const chartInstance = useRef();
+
+  useEffect(() => {
+    api('/analysis/leaderboard').then(setData).catch(() => {});
+    api('/analysis/summary').then(setSummary).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!data || !chartRef.current) return;
+    if (chartInstance.current) chartInstance.current.destroy();
+    const ctx = chartRef.current.getContext('2d');
+    chartInstance.current = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: data.leaderboard.map(d => d.algorithm),
+        datasets: [{ data: data.leaderboard.map(d => d.runs), backgroundColor: data.leaderboard.map((_, i) => `hsl(${210 + i * 30}, 70%, 60%)`), borderWidth: 0 }],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { color: '#a0aec0', font: { size: 11 } } } },
+      },
+    });
+  }, [data]);
+
+  const medals = ['🥇', '🥈', '🥉'];
+
+  return (
+    <div>
+      <div className="grid-4 mb-2">
+        {[
+          { label: 'Total Experiments', value: summary?.total_experiments ?? '—', icon: '🧪' },
+          { label: 'Success Rate', value: summary ? `${Math.round((summary.successful / summary.total_experiments) * 100) || 0}%` : '—', icon: '✅' },
+          { label: 'Failed Runs', value: summary?.failed ?? '—', icon: '❌' },
+          { label: 'Algorithms Tested', value: summary?.unique_algorithms ?? '—', icon: '🤖' },
+        ].map(s => (
+          <div key={s.label} className="stat-card">
+            <div className="stat-icon">{s.icon}</div>
+            <div className="stat-value" style={{ color: 'var(--accent)' }}>{s.value}</div>
+            <div className="stat-label">{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid-2">
+        <div className="card">
+          <div className="card-title mb-2">Algorithm Leaderboard</div>
+          {!data && <div className="loader-overlay"><div className="loader"></div></div>}
+          {data?.leaderboard.length === 0 && (
+            <div className="empty-state"><div className="empty-icon">🏆</div><div className="empty-text">No data yet</div><div className="empty-sub">Train some models first</div></div>
+          )}
+          {data?.leaderboard.map((d, i) => (
+            <div key={d.algorithm} className="metric-row">
+              <div className="flex-row">
+                <span style={{ fontSize: 18 }}>{medals[i] || '  '}</span>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 14 }}>{d.algorithm}</div>
+                  <div className="text-xs">{d.runs} run{d.runs !== 1 ? 's' : ''}</div>
+                </div>
+              </div>
+              <div>
+                {Object.entries(d.avg_metrics).map(([k, v]) => (
+                  <div key={k} className="text-xs" style={{ textAlign: 'right', color: metricColor(v) }}>{k}: {pct(v)}</div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-title mb-2">Runs Distribution</div>
+          <div className="chart-box"><canvas ref={chartRef}></canvas></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Algorithm Guide ─────────────────────────────────────────────────────────
+function Guide() {
+  const [selected, setSelected] = useState(null);
+
+  const algos = [
+    {
+      name: 'Linear Regression', type: 'Regression', icon: '📈', color: '#63b3ed',
+      when: 'When relationship between features and target is approximately linear.',
+      how: 'Minimises the sum of squared differences between predictions and actual values using gradient descent or normal equation.',
+      pros: ['Simple and interpretable', 'Fast training', 'Works well with small datasets'],
+      cons: ['Assumes linearity', 'Sensitive to outliers', 'Cannot capture complex patterns'],
+      metrics: ['R² Score', 'RMSE', 'MAE'],
+      params: [{ name: 'fit_intercept', default: 'True', desc: 'Whether to calculate intercept.' }],
+    },
+    {
+      name: 'Logistic Regression', type: 'Classification', icon: '🔢', color: '#9f7aea',
+      when: 'Binary or multiclass problems with linearly separable classes.',
+      how: 'Applies the sigmoid/softmax function to a linear combination of features to output class probabilities.',
+      pros: ['Probabilistic output', 'Regularisation support', 'Interpretable coefficients'],
+      cons: ['Assumes linear decision boundary', 'May underfit complex data'],
+      metrics: ['Accuracy', 'F1 Score', 'Precision', 'Recall'],
+      params: [{ name: 'C', default: '1.0', desc: 'Inverse regularisation strength.' }, { name: 'max_iter', default: '1000', desc: 'Max solver iterations.' }],
+    },
+    {
+      name: 'Decision Tree', type: 'Both', icon: '🌳', color: '#48bb78',
+      when: 'When you need interpretable rules and can handle non-linear boundaries.',
+      how: 'Recursively splits data on the feature that maximises information gain (Gini or entropy) until leaves are pure.',
+      pros: ['Highly interpretable', 'No feature scaling needed', 'Handles non-linearity'],
+      cons: ['Prone to overfitting', 'Unstable', 'Biased towards high-cardinality features'],
+      metrics: ['Accuracy', 'F1 Score', 'R²', 'RMSE'],
+      params: [{ name: 'max_depth', default: '10', desc: 'Max depth of tree.' }, { name: 'min_samples_split', default: '2', desc: 'Min samples to split a node.' }],
+    },
+    {
+      name: 'Random Forest', type: 'Both', icon: '🌲', color: '#4fd1c5',
+      when: 'General-purpose algorithm — great default choice for tabular data.',
+      how: 'Trains many decision trees on bootstrap samples with random feature subsets, then aggregates predictions.',
+      pros: ['Robust to overfitting', 'Feature importance', 'Handles missing values'],
+      cons: ['Less interpretable', 'Slower than single tree', 'Memory intensive'],
+      metrics: ['Accuracy', 'F1 Score', 'R²', 'RMSE'],
+      params: [{ name: 'n_estimators', default: '100', desc: 'Number of trees.' }, { name: 'max_features', default: 'sqrt', desc: 'Features per split.' }],
+    },
+    {
+      name: 'SVM / SVR', type: 'Both', icon: '🎯', color: '#f687b3',
+      when: 'High-dimensional data, small/medium datasets, complex class boundaries.',
+      how: 'Finds the hyperplane that maximises margin between classes. Uses kernel trick for non-linear separation.',
+      pros: ['Effective in high dimensions', 'Robust to outliers', 'Versatile kernels'],
+      cons: ['Slow on large datasets', 'Needs feature scaling', 'Sensitive to hyperparameters'],
+      metrics: ['Accuracy', 'F1 Score', 'R²', 'RMSE'],
+      params: [{ name: 'C', default: '1.0', desc: 'Regularisation.' }, { name: 'kernel', default: 'rbf', desc: 'Kernel function.' }],
+    },
+    {
+      name: 'KNN', type: 'Both', icon: '🔍', color: '#f6ad55',
+      when: 'Small-medium datasets where locality matters and decision boundary is irregular.',
+      how: 'Stores all training data. For a new point, finds k nearest neighbours and votes (classification) or averages (regression).',
+      pros: ['No training phase', 'Simple concept', 'Naturally handles multiclass'],
+      cons: ['Slow at prediction time', 'High memory', 'Sensitive to irrelevant features'],
+      metrics: ['Accuracy', 'F1 Score', 'R²', 'RMSE'],
+      params: [{ name: 'n_neighbors', default: '5', desc: 'Number of neighbours.' }, { name: 'weights', default: 'uniform', desc: 'Weight function.' }],
+    },
+    {
+      name: 'Naive Bayes', type: 'Classification', icon: '📊', color: '#fc8181',
+      when: 'Text classification, spam detection, fast probabilistic classification.',
+      how: 'Applies Bayes theorem with strong (naive) independence assumption between features.',
+      pros: ['Very fast', 'Works well with small data', 'Probabilistic output'],
+      cons: ['Strong independence assumption rarely holds', 'Cannot learn feature interactions'],
+      metrics: ['Accuracy', 'F1 Score', 'Precision', 'Recall'],
+      params: [{ name: 'var_smoothing', default: '1e-9', desc: 'Variance smoothing for stability.' }],
+    },
+    {
+      name: 'Gradient Boosting', type: 'Both', icon: '🚀', color: '#6c63ff',
+      when: 'Competition-grade performance on structured data, when accuracy is paramount.',
+      how: 'Builds trees sequentially — each tree fits the residual errors of all previous trees. Uses gradient descent in function space.',
+      pros: ['State-of-the-art performance', 'Feature importance', 'Handles mixed data types'],
+      cons: ['Many hyperparameters', 'Prone to overfitting', 'Slow to train'],
+      metrics: ['Accuracy', 'F1 Score', 'R²', 'RMSE'],
+      params: [{ name: 'n_estimators', default: '100', desc: 'Number of boosting stages.' }, { name: 'learning_rate', default: '0.1', desc: 'Shrinkage factor.' }],
+    },
+  ];
+
+  return (
+    <div className="grid-2">
+      <div className="card">
+        <div className="card-title mb-2">Select Algorithm</div>
+        {algos.map(a => (
+          <div key={a.name} className={`algo-card mb-2 ${selected?.name === a.name ? 'selected' : ''}`} onClick={() => setSelected(a)}>
+            <div className="flex-row">
+              <span style={{ fontSize: 20 }}>{a.icon}</span>
+              <div>
+                <div className="algo-name">{a.name}</div>
+                <span className="badge" style={{ background: a.color + '22', color: a.color, fontSize: 10 }}>{a.type}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {selected ? (
+        <div className="card">
+          <div className="flex-row mb-2">
+            <span style={{ fontSize: 32 }}>{selected.icon}</span>
+            <div>
+              <div className="card-title" style={{ fontSize: 18 }}>{selected.name}</div>
+              <span className="badge" style={{ background: selected.color + '22', color: selected.color }}>{selected.type}</span>
+            </div>
+          </div>
+
+          <div className="card section-gap" style={{ background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>🕐 When to Use</div>
+            <div className="text-sm">{selected.when}</div>
+          </div>
+
+          <div className="section-gap">
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>⚙️ How it Works</div>
+            <div className="text-sm" style={{ color: 'var(--text2)', lineHeight: 1.6 }}>{selected.how}</div>
+          </div>
+
+          <div className="grid-2 section-gap">
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, color: 'var(--green)' }}>✅ Pros</div>
+              {selected.pros.map(p => <div key={p} className="text-xs mb-2">• {p}</div>)}
+            </div>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6, color: 'var(--red)' }}>⚠️ Cons</div>
+              {selected.cons.map(c => <div key={c} className="text-xs mb-2">• {c}</div>)}
+            </div>
+          </div>
+
+          <div className="section-gap">
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 6 }}>📏 Key Metrics</div>
+            <div className="flex-row" style={{ flexWrap: 'wrap', gap: 6 }}>
+              {selected.metrics.map(m => <span key={m} className="chip">{m}</span>)}
+            </div>
+          </div>
+
+          <div className="section-gap">
+            <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 8 }}>🔧 Hyperparameters</div>
+            {selected.params.map(p => (
+              <div key={p.name} className="metric-row">
+                <div>
+                  <code style={{ fontSize: 12, color: 'var(--accent)', background: 'var(--bg3)', padding: '2px 6px', borderRadius: 4 }}>{p.name}</code>
+                  <div className="text-xs mt-2">{p.desc}</div>
+                </div>
+                <span className="chip">default: {p.default}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="card">
+          <div className="empty-state"><div className="empty-icon">📖</div><div className="empty-text">Select an algorithm to view its guide</div></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── App ─────────────────────────────────────────────────────────────────────
+function App() {
+  const [page, setPage] = useState('home');
+  const { toasts, show } = useToast();
+
+  const pageTitles = {
+    home: ['Overview', 'Welcome to your Supervised Learning Platform'],
+    datasets: ['Datasets', 'Upload and manage your CSV datasets'],
+    train: ['Train Model', 'Select an algorithm and train on your data'],
+    results: ['Experiment Results', 'Browse all trained models and metrics'],
+    compare: ['Algorithm Comparison', 'Side-by-side performance analysis'],
+    leaderboard: ['Global Leaderboard', 'Ranking of algorithms across all experiments'],
+    guide: ['Algorithm Guide', 'Deep dive into every supervised learning algorithm'],
+  };
+
+  const [title, subtitle] = pageTitles[page] || ['', ''];
+
+  return (
+    <div className="app">
+      <Sidebar page={page} onNav={setPage} />
+      <div className="main">
+        <div className="topbar">
+          <div>
+            <div className="page-title">{title}</div>
+            <div className="page-sub">{subtitle}</div>
+          </div>
+          <div className="topbar-actions">
+            <button className="btn btn-secondary btn-sm" onClick={() => setPage('datasets')}>📂 Datasets</button>
+            <button className="btn btn-primary btn-sm" onClick={() => setPage('train')}>🧠 Train</button>
+          </div>
+        </div>
+        <div className="content">
+          {page === 'home' && <Overview onNav={setPage} />}
+          {page === 'datasets' && <Datasets toast={show} />}
+          {page === 'train' && <Train toast={show} />}
+          {page === 'results' && <Results toast={show} />}
+          {page === 'compare' && <Compare toast={show} />}
+          {page === 'leaderboard' && <Leaderboard />}
+          {page === 'guide' && <Guide />}
+        </div>
+      </div>
+      <ToastContainer toasts={toasts} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
