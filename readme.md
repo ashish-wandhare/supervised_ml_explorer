@@ -335,5 +335,8 @@ uvicorn main:app --reload --port 8000
 - [Chart.js](https://www.chartjs.org/) — Beautiful charts
 
 ---
+## Render Deployment
 
+**Live Application:**  
+https://supervised-ml-explorer-1.onrender.com/
 
