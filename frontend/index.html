@@ -181,7 +181,16 @@
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
-const API = 'http://localhost:8000/api';
+// const API = 'http://localhost:8000/api';
+
+const isLocal =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.protocol === 'file:';
+
+const API = isLocal
+    ? 'http://localhost:8000/api'
+    : 'https://supervised-ml-explorer.onrender.com/api';
 
 // ─── Utilities ─────────────────────────────────────────────────────────────
 async function api(endpoint, options = {}) {
