@@ -340,3 +340,15 @@ uvicorn main:app --reload --port 8000
 **Live Application:**  
 https://supervised-ml-explorer-1.onrender.com/
 
+## 📸 Application Screenshots
+<img width="1917" height="953" alt="1_Overview" src="https://github.com/user-attachments/assets/c0650592-f446-48e6-a628-b7444e5f440d" />
+<img width="1917" height="951" alt="2_Overview_scroll" src="https://github.com/user-attachments/assets/dd2b22c5-a399-49a0-93a2-d3e22e55104d" />
+<img width="1912" height="947" alt="3_Datasets" src="https://github.com/user-attachments/assets/638f231a-9c77-4beb-8e02-5985417d7004" />
+<img width="1912" height="951" alt="4_Train_model" src="https://github.com/user-attachments/assets/fe34d9c2-daac-4755-a20c-335ecfeed110" />
+<img width="1917" height="942" alt="5_Train_result" src="https://github.com/user-attachments/assets/dd7f9f93-b4d5-48f7-889b-c24219f33818" />
+<img width="1917" height="942" alt="6_results" src="https://github.com/user-attachments/assets/ebff2925-1eee-4ebe-9428-3bec75f3e98c" />
+<img width="1917" height="948" alt="7_Compaire" src="https://github.com/user-attachments/assets/0ecc87fb-ff58-4da8-8290-b52686ffb7c7" />
+<img width="1912" height="950" alt="8_Leaderboard" src="https://github.com/user-attachments/assets/c5966998-6b05-4066-adac-6a0236a43950" />
+<img width="1905" height="945" alt="9_Algorithm_Guide" src="https://github.com/user-attachments/assets/b64dfced-6f27-4a82-bb7b-368d27eedd68" />
+
+
